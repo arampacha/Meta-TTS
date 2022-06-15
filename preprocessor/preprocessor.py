@@ -193,7 +193,7 @@ class Preprocessor:
         )
 
         # Get alignments
-        textgrid = tgt.io.read_textgrid(tg_path)
+        textgrid = tgt.io.read_textgrid(tg_path,  include_empty_intervals=True)
         phone, duration, start, end = self.get_alignment(
             textgrid.get_tier_by_name("phones")
         )
@@ -306,7 +306,7 @@ class Preprocessor:
         )
 
     def get_alignment(self, tier):
-        sil_phones = ["sil", "sp", "spn"]
+        sil_phones = ["sil", "sp", "spn", ""]
 
         phones = []
         durations = []
@@ -330,7 +330,7 @@ class Preprocessor:
                 end_idx = len(phones)
             else:
                 # For silent phones
-                phones.append(p)
+                phones.append(p if p else "sp")
 
             durations.append(
                 int(
