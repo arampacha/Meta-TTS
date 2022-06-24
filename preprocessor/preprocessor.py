@@ -374,5 +374,5 @@ class Preprocessor:
 
     def normalize_volume(self, wf, sr, vol):
         meter = pyln.Meter(sr)
-        src_vol = meter.integrated_loudness(wav)
+        src_vol = meter.integrated_loudness(wf)
         return pyln.normalize.loudness(wf, src_vol, vol)
