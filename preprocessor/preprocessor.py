@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 import resemblyzer
 from resemblyzer import preprocess_wav, wav_to_mel_spectrogram
+import pyloudnorm as pyln
 
 import audio as Audio
 
@@ -51,6 +52,7 @@ class Preprocessor:
             config["preprocessing"]["mel"]["mel_fmin"],
             config["preprocessing"]["mel"]["mel_fmax"],
         )
+        self.loudnorm = config['preprocessing'].get('loudnorm', None)
 
         if "subsets" in config:
             self.train_set = config["subsets"].get("train", None)
@@ -203,6 +205,8 @@ class Preprocessor:
 
         # Read and trim wav files
         wav, _ = librosa.load(wav_path)
+        if self.loudnorm is not None:
+            wav = self.normalize_volume(wav, self.sampling_rate, self.loudnorm)
         wav = wav[
             int(self.sampling_rate * start) : int(self.sampling_rate * end)
         ].astype(np.float32)
@@ -367,3 +371,8 @@ class Preprocessor:
             min_value = min(min_value, min(values))
 
         return min_value, max_value
+
+    def normalize_volume(self, wf, sr, vol):
+        meter = pyln.Meter(sr)
+        src_vol = meter.integrated_loudness(wav)
+        return pyln.normalize.loudness(wf, src_vol, vol)
