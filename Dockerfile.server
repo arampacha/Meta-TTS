@@ -1,0 +1,24 @@
+FROM python:3.8-bullseye
+
+ARG DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED True
+
+WORKDIR /code
+
+RUN set -e; \
+    apt-get update -y && apt-get install -y --no-install-recommends \
+    tini gcc g++ make libsndfile1-dev \
+    && apt-get clean
+
+ENV MNT_DIR /mnt/gcs
+
+RUN pip install torch torchaudio --extra-index-url https://download.pytorch.org/whl/cpu
+COPY requirements.server.txt .
+RUN pip install --no-cache-dir -r requirements.server.txt
+
+COPY . /code/
+
+RUN chmod +x /code/run_simple.sh
+
+ENTRYPOINT ["/usr/bin/tini", "--"] 
+CMD ["/code/run_simple.sh"]

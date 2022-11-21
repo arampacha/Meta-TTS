@@ -9,7 +9,6 @@ matplotlib
 numba
 numpy
 pypinyin
-pyworld
 PyYAML
 scikit-learn
 scipy
@@ -20,4 +19,7 @@ tqdm
 unidecode
 pandas
 pyloudnorm
-wandb
+google-cloud-storage==1.43.0
+fastapi==0.85.1
+uvicorn==0.16.0
+smart_open==6.2.0

@@ -1,0 +1,67 @@
+
+image: docker:dind
+
+stages:
+
+  - build-gcp
+  - build-standard
+  - build-server
+
+#cache:
+#  key: ${CI_COMMIT_REF_SLUG}
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  CI_PROJECT_NAME: "metatts"
+  GROUP_NAME: "voicemod-experience-and-innovation"
+  IMAGE_NAME: "registry.service.voicemod.priv/$STACK_NAME-$CI_PROJECT_NAME"
+
+before_script:
+  - export GROUP_NAME=$(echo "$CI_PROJECT_NAMESPACE" | cut -d "/" -f 2)
+  - export IMAGE_NAME=$(echo "$GCP_DOCKER_REGISTRY/$GCP_PROJECT_ID_DEVOPS/$GROUP_NAME/$CI_PROJECT_NAME")
+  - echo "$IMAGE_NAME"
+
+build-gcp:
+  stage: build-gcp
+  tags:
+    - ovh
+  services:
+    - docker:dind
+  environment: prod
+  script:
+    - docker login -u _json_key --password="$(cat $GCP_AUTH_DEVOPS)" https://${GCP_DOCKER_REGISTRY}
+    - docker build --file ./Dockerfile.gcp --pull --no-cache -t "$IMAGE_NAME:gcp" .
+    - docker push "$IMAGE_NAME:gcp"
+  except:
+    - tags
+  when: manual
+
+build-standard:
+  stage: build-standard
+  tags:
+    - ovh
+  services:
+    - docker:dind
+  environment: prod
+  script:
+    - docker login -u _json_key --password="$(cat $GCP_AUTH_DEVOPS)" https://${GCP_DOCKER_REGISTRY}
+    - docker build --file ./Dockerfile --pull --no-cache -t "$IMAGE_NAME:standard" .
+    - docker push "$IMAGE_NAME:standard"
+  except:
+    - tags
+  when: manual
+
+build-server:
+  stage: build-server
+  tags:
+    - ovh
+  services:
+    - docker:dind
+  environment: prod
+  script:
+    - docker login -u _json_key --password="$(cat $GCP_AUTH_DEVOPS)" https://${GCP_DOCKER_REGISTRY}
+    - docker build --file ./Dockerfile.server --pull --no-cache -t "$IMAGE_NAME:server" .
+    - docker push "$IMAGE_NAME:server"
+  except:
+    - tags
+  when: manual

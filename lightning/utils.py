@@ -6,11 +6,12 @@ from contextlib import contextmanager
 
 
 class LightningMelGAN(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, vocoder=None):
         super().__init__()
-        vocoder = torch.hub.load(
-            "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
-        )
+        if vocoder is None:
+            vocoder = torch.hub.load(
+                "descriptinc/melgan-neurips", "load_melgan", "multi_speaker"
+            )
         self.mel2wav = vocoder.mel2wav
 
     def inverse(self, mel):
