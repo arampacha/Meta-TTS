@@ -88,7 +88,8 @@ class Preprocessor:
             dset_dir = os.path.join(self.in_dir, dset)
             out = list()
             for speaker in tqdm(os.listdir(dset_dir), desc=dset):
-                speakers[speaker] = i
+                if not speaker in speakers:
+                    speakers[speaker] = i
                 for wav_name in os.listdir(os.path.join(dset_dir, speaker)):
                     if ".wav" not in wav_name:
                         continue
