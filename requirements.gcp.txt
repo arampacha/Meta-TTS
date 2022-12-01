@@ -1,0 +1,25 @@
+pytorch-lightning
+learn2learn >= 0.1.6
+comet-ml
+resemblyzer
+g2p-en
+inflect
+librosa
+matplotlib
+numba
+numpy
+pypinyin
+pyworld
+PyYAML
+scikit-learn
+scipy
+soundfile
+tensorboard
+tgt
+tqdm
+unidecode
+pandas
+pyloudnorm
+wandb
+google-cloud-storage
+smart_open

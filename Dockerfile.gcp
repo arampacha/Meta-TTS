@@ -9,11 +9,14 @@ RUN rm /etc/apt/sources.list.d/cuda.list && \
 RUN apt-get update && apt-get install -y --no-install-recommends gcc g++ make espeak espeak-ng libsndfile1-dev sox && rm -rf /var/lib/apt/lists/*
 RUN python3 -m pip install --no-cache-dir --upgrade pip
 RUN python3 -m pip install --no-cache-dir torchaudio==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu113
-RUN ["/bin/bash", "-c", "conda install -c conda-forge montreal-forced-aligner"]
+RUN conda install -c conda-forge montreal-forced-aligner -y && \
+    conda clean -a -y
+RUN mfa model download dictionary english_us_arpa && \
+    mfa model download acoustic english_us_arpa
 WORKDIR /workspace/MetaTTS/
-COPY requirements.txt /workspace/MetaTTS/
-RUN ["/bin/bash", "-c", "python3 -m pip install --no-cache-dir -r requirements.txt"]
-RUN ["/bin/bash", "-c", "python3 -m pip install --no-cache-dir smart_open google-cloud-storage"]
+COPY requirements.gcp.txt /workspace/MetaTTS/
+RUN ["/bin/bash", "-c", "python3 -m pip install --no-cache-dir -r requirements.gcp.txt"]
+ENV PYTHONUNBUFFERED True
 COPY . /workspace/MetaTTS/
 WORKDIR /workspace
 ENV PYTHONPATH "${PYTHONPATH}:/workspace/MetaTTS"
