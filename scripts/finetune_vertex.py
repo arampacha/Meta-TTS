@@ -57,7 +57,7 @@ synth_inputs = [prepare_inputs(t) for t in texts]
 DataItem = namedtuple('DataItem', ['filename', 'transcript', 'speaker'])
 
 def run_mfa(path:str):
-    subprocess.run(f"mfa align -t ./tmp {path} english lexicon/librispeech-lexicon.txt preprocessed_data/custom/TextGrid")
+    subprocess.run(f"mfa align -t ./tmp {path} english_us_arpa lexicon/librispeech-lexicon.txt preprocessed_data/custom/TextGrid")
     
 def prepare_raw_data(datafiles):
 
