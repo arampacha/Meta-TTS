@@ -1,0 +1,94 @@
+apiName: $NAME
+deployment:
+    labels:
+        app: $NAME
+        api: $NAME
+        env: $CI_ENVIRONMENT_NAME
+
+    containers:
+        containerName: $NAME
+        containerPort: 80
+        command: ["uvicorn"]
+        args: ["server:app", "--host=0.0.0.0", "--port=80"]
+
+    image:
+        repository: $IMAGE
+        tag: "$TAG"
+        pullPolicy: Always
+    livenessProbe:
+        path: /health
+        port: 80
+        initialDelaySeconds: 10
+        periodSeconds: 10
+
+    readinessProbe:
+        path: /health
+        port: 80
+        initialDelaySeconds: 10
+        periodSeconds: 10
+    
+    resources:
+        limits:
+            memory: 2048Mi
+        requests:
+            cpu: 20m
+            memory: 100Mi
+    
+    podAnnotations: {}
+    podSecurityContext: {}
+    volumes: {}
+    PersistentVolumeClaims:
+        nfs:
+            create: false
+            VolumeName: tts-nfs-volume
+            VolumeCapacity: 1Ti
+            AccessModes:
+                - ReadOnlyMany
+            StorageClassName: manual
+            path: /nfsdisk
+            readOnly: true
+    environments:
+        BUCKET_NAME: pg-vm-v0-ucg
+        PROJECT_ID: playground-exp-innovation
+        MNT_DIR: /nfsdisk
+        PORT: 80
+    nodeSelector: {}
+    tolerations: []
+  
+    affinity: {}
+
+google_credentials:
+  enable: true
+  name: google-credentials-metatts
+
+secrets:
+    enable: true
+    name: $NAME
+
+hpa:
+    enabled: false
+
+ingress:
+  default:
+    enabled: true
+    annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/whitelist-source-range: 35.189.230.56, 79.110.130.145
+    hosts:
+        - host: $NAME.voicemod.dev
+          paths:
+              - path: /
+                pathType: ImplementationSpecific
+                backend:
+                    name: $NAME
+                    port: 80
+    tls:
+        - secretName: tls-voicemod-dev
+          hosts:
+              - $NAME.voicemod.dev
+services:
+    default:
+        type: ClusterIP
+        port: 80
+        targetPort: 80

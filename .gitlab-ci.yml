@@ -20,6 +20,7 @@ before_script:
   - export GROUP_NAME=$(echo "$CI_PROJECT_NAMESPACE" | cut -d "/" -f 2)
   - export IMAGE_NAME=$(echo "$GCP_DOCKER_REGISTRY/$GCP_PROJECT_ID_DEVOPS/$GROUP_NAME/$CI_PROJECT_NAME")
   - echo "$IMAGE_NAME"
+  - export STACK_NAME=$(echo "voicemod-experience-and-innovation")
 
 build-gcp:
   stage: build-gcp
@@ -60,8 +61,31 @@ build-server:
   environment: prod
   script:
     - docker login -u _json_key --password="$(cat $GCP_AUTH_DEVOPS)" https://${GCP_DOCKER_REGISTRY}
-    - docker build --file ./Dockerfile.server --pull --no-cache -t "$IMAGE_NAME:server" .
-    - docker push "$IMAGE_NAME:server"
+    - docker build --file ./Dockerfile.server --pull --no-cache -t "$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-server" .
+    - docker push "$IMAGE_NAME:$CI_COMMIT_SHORT_SHA-server"
   except:
     - tags
+  when: manual
+
+deploy-playground:
+  stage: deploy-playground
+  image: eu.gcr.io/voicemod-devops/devops/google-gcloud-sdk-helm:latest
+  services:
+    - docker:dind
+  environment: pg
+  script:
+      - echo $STACK_NAME
+      - echo $IMAGE_NAME
+      - gcloud auth activate-service-account --key-file $GCP_AUTH_PLAYGROUND
+      - gcloud container clusters get-credentials $GCP_CLUSTER_PLAYGROUND --region $GCP_REGION_PLAYGROUND --project $GCP_PROJECT_ID_PLAYGROUND
+      - export GOOGLE_APPLICATION_CREDENTIALS=$(echo $GCP_AUTH_PLAYGROUND)
+      - export HELM_EXPERIMENTAL_OCI=1
+      - export NAME=$(echo "$CI_ENVIRONMENT_NAME-$STACK_NAME-$CI_PROJECT_NAME")
+      - export IMAGE=$(echo "$IMAGE_NAME")
+      - export TAG=$(echo "$CI_COMMIT_SHORT_SHA-server")
+      - sops -d --gcp-kms projects/voicemod-devops/locations/global/keyRings/voicemod-keyring/cryptoKeys/voicemod-sops-key deploy/secrets/google-credentials-pg.yaml.enc > google-credentials-pg.yaml.dec
+      - gcloud auth print-access-token | helm registry login -u oauth2accesstoken --password-stdin https://$GCP_HELM_REGISTRY_HOST
+      - helm chart pull $GCP_HELM_REGISTRY/node-apis:$HELM_NODE_APIS_TAG
+      - helm chart export $GCP_HELM_REGISTRY/node-apis:$HELM_NODE_APIS_TAG
+      - envsubst < deploy/$CI_ENVIRONMENT_NAME.yaml | helm upgrade -i $NAME ./node-apis -n dev --set google_credentials.value="$(cat google-credentials-pg.yaml.dec | base64 | tr -d '\n')" -f ./deploy/secrets/$CI_ENVIRONMENT_NAME.yaml.dec -f -
   when: manual
